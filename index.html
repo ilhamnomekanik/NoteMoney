@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="manifest" href="manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
 <title>MoneyNote — Catatan Keuangan</title>
 <style>
   /* ============================================
@@ -563,7 +566,7 @@
     <!-- ===== HALAMAN UTAMA ===== -->
     <div class="page active" id="page-utama">
       <div class="balance-card">
-        <div class="balance-label">Saldo Semua Rekening</div>
+        <div class="balance-label" id="balance-label">SALDO — Semua</div>
         <div class="balance-amount" id="total-balance">Rp 0</div>
         <div class="balance-row">
           <div class="balance-mini">
@@ -919,11 +922,15 @@ function findCategory(type, id) {
    RENDER UTAMA — dipanggil tiap ada perubahan
    ============================================================ */
 function render() {
-  const totalIn = transactions.filter(t => t.type === 'in').reduce((s, t) => s + t.amount, 0);
-  const totalOut = transactions.filter(t => t.type === 'out').reduce((s, t) => s + t.amount, 0);
+  // filter ikut tab waktu yang aktif
+  const filtered = transactions.filter(passesTimeFilter);
+  const totalIn = filtered.filter(t => t.type === 'in').reduce((s, t) => s + t.amount, 0);
+  const totalOut = filtered.filter(t => t.type === 'out').reduce((s, t) => s + t.amount, 0);
   const balance = totalIn - totalOut;
 
-  // --- Kartu saldo ---
+  // --- Kartu saldo (ikut filter waktu) ---
+  const labelMap = { semua: 'Semua', hari: 'Hari Ini', minggu: 'Minggu Ini', bulan: 'Bulan Ini' };
+  document.getElementById('balance-label').textContent = 'SALDO — ' + labelMap[timeFilter];
   document.getElementById('total-balance').textContent = rupiah(balance);
   document.getElementById('mini-income').textContent = rupiah(totalIn);
   document.getElementById('mini-expense').textContent = rupiah(totalOut);
@@ -1253,6 +1260,7 @@ function init() {
   goPage('utama');
 }
 init();
+if ("serviceWorker" in navigator) { navigator.serviceWorker.register("sw.js"); }
 </script>
 </body>
 </html>
